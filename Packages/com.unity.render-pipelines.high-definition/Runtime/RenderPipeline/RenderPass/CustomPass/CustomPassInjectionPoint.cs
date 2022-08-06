@@ -26,5 +26,14 @@ namespace UnityEngine.Rendering.HighDefinition
         BeforePostProcess = 2,
         /// <summary>This injection point is before HDRP renders post-processing and custom post-processing effects.</summary>
         AfterPostProcess = 3,
+        ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+        /// <summary>This injection point is before HDRP renders anything in GBuffers.</summary>
+        BeforeGBuffer = 10,
+        /// <summary>This injection point is after HDRP finishes rendering in GBuffers.</summary>
+        AfterGBuffer = 11,
+        /// <summary>This injection point is after HDRP depth pyramid.</summary>
+        /// Depth Pyramid is now twice, after depth pre pass and after Gbuffer
+        AfterDepthPyramid = 12
+        ///@@@@ [Divergence - 3] - End
     }
 }

@@ -240,7 +240,17 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 RenderDBuffer(renderGraph, hdCamera, decalBuffer, ref result, cullingResults);
 
+                ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+                RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.BeforeGBuffer, aovRequest, aovBuffers);
+                ///@@@@ [Divergence - 2] - End
+                
+                
                 RenderGBuffer(renderGraph, sssBuffer, vtFeedbackBuffer, ref result, cullingResults, hdCamera);
+
+
+                ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+                RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.AfterGBuffer, aovRequest, aovBuffers);
+                ///@@@@ [Divergence - 2] - End
 
                 DecalNormalPatch(renderGraph, hdCamera, ref result);
 
@@ -268,6 +278,10 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 // In both forward and deferred, everything opaque should have been rendered at this point so we can safely copy the depth buffer for later processing.
                 GenerateDepthPyramid(renderGraph, hdCamera, mip1FromDownsampleForLowResTrans, ref result);
+
+                ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+                RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.AfterDepthPyramid, aovRequest, aovBuffers);
+                ///@@@@ [Divergence - 2] - End
 
                 if (shouldRenderMotionVectorAfterGBuffer)
                 {
