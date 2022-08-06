@@ -1810,7 +1810,10 @@ namespace UnityEngine.Rendering.HighDefinition
                     nonMSAAColorBufferRG = m_NonMSAAColorBuffer,
                     depthBufferRG = prepassOutput.depthBuffer,
                     normalBufferRG = prepassOutput.resolvedNormalBuffer,
-                    motionVectorBufferRG = prepassOutput.resolvedMotionVectorsBuffer
+                    motionVectorBufferRG = prepassOutput.resolvedMotionVectorsBuffer,
+                    ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+                    gbuffer = prepassOutput.gbuffer,
+                    ///@@@@ [Divergence - 0] - End
                 };
                 executed |= customPass.Execute(renderGraph, hdCamera, cullingResults, cameraCullingResults, customPassTargets);
             }
