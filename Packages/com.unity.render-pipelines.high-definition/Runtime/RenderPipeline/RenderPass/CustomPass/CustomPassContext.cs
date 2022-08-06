@@ -66,6 +66,9 @@ namespace UnityEngine.Rendering.HighDefinition
         /// Material Property Block, unique for each custom pass instance.
         /// </summary>
         public readonly MaterialPropertyBlock propertyBlock;
+        ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+        public HDRenderPipeline.GBufferOutput gbuffer;
+        ///@@@@ [Divergence - 0] - End
 
         internal CustomPassContext(
             ScriptableRenderContext renderContext, CommandBuffer cmd,
@@ -74,7 +77,11 @@ namespace UnityEngine.Rendering.HighDefinition
             RTHandle cameraColorBuffer, RTHandle cameraDepthBuffer,
             RTHandle cameraNormalBuffer, RTHandle cameraMotionVectorsBuffer,
             Lazy<RTHandle> customColorBuffer,
-            Lazy<RTHandle> customDepthBuffer, MaterialPropertyBlock propertyBlock)
+            Lazy<RTHandle> customDepthBuffer,
+            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+            MaterialPropertyBlock propertyBlock,
+            HDRenderPipeline.GBufferOutput gbuffer,
+            ///@@@@ [Divergence - 0] - End
         {
             this.renderContext = renderContext;
             this.cmd = cmd;
@@ -88,6 +95,9 @@ namespace UnityEngine.Rendering.HighDefinition
             this.cameraMotionVectorsBuffer = cameraMotionVectorsBuffer;
             this.customDepthBuffer = customDepthBuffer;
             this.propertyBlock = propertyBlock;
+            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+            this.gbuffer = gbuffer;
+            ///@@@@ [Divergence - 0] - End
         }
     }
 }

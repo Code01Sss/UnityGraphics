@@ -145,6 +145,10 @@ namespace UnityEngine.Rendering.HighDefinition
             public TextureHandle depthBufferRG;
             public TextureHandle normalBufferRG;
             public TextureHandle motionVectorBufferRG;
+
+            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+            public HDRenderPipeline.GBufferOutput gbuffer;
+            ///@@@@ [Divergence - 0] - End
         }
 
         enum Version
@@ -203,6 +207,19 @@ namespace UnityEngine.Rendering.HighDefinition
             if (targets.motionVectorBufferRG.IsValid())
                 output.motionVectorBufferRG = builder.ReadWriteTexture(targets.motionVectorBufferRG);
 
+            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+            //Mark all gbuffers as read for all custom passes.
+            //TODO: maybe do this only for the custom passes that need it (those thare rendering in gbuffers)
+            output.gbuffer = new HDRenderPipeline.GBufferOutput();
+            int gbufferCnt = targets.gbuffer.gBufferCount;
+            output.gbuffer.gBufferCount = gbufferCnt;
+            output.gbuffer.mrt = new UnityEngine.Experimental.Rendering.RenderGraphModule.TextureHandle[gbufferCnt];
+            for (uint i = 0; i < gbufferCnt; i++)
+            {
+                if (targets.gbuffer.mrt[i].IsValid())
+                    output.gbuffer.mrt[i] = builder.ReadWriteTexture(targets.gbuffer.mrt[i]);
+            }
+            ///@@@@ [Divergence - 0] - End
             return output;
         }
 
@@ -261,7 +278,10 @@ namespace UnityEngine.Rendering.HighDefinition
                             customPass.currentRenderTarget.motionVectorBufferRG,
                             customPass.currentRenderTarget.customColorBuffer,
                             customPass.currentRenderTarget.customDepthBuffer,
-                            ctx.renderGraphPool.GetTempMaterialPropertyBlock()
+                            ctx.renderGraphPool.GetTempMaterialPropertyBlock(),
+                            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+                            customPass.currentRenderTarget.gbuffer,
+                            ///@@@@ [Divergence - 0] - End
                         );
 
                         customPass.isExecuting = true;

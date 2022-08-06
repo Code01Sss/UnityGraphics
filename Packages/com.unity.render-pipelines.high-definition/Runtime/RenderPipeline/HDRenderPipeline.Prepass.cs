@@ -195,6 +195,11 @@ namespace UnityEngine.Rendering.HighDefinition
             result.depthBuffer = CreateDepthBuffer(renderGraph, hdCamera.clearDepth, hdCamera.msaaSamples);
             result.stencilBuffer = result.depthBuffer;
 
+            ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+            // We know create the GBuffers before the GBuffer pass, because there are different passes that use it
+            CreateGBufferTargets(renderGraph, hdCamera, sssBuffer, vtFeedbackBuffer, ref result, hdCamera.frameSettings);
+            ///@@@@ [Divergence - 0] - End
+
             RenderXROcclusionMeshes(renderGraph, hdCamera, colorBuffer, result.depthBuffer);
 
             using (new XRSinglePassScope(renderGraph, hdCamera))
@@ -570,6 +575,74 @@ namespace UnityEngine.Rendering.HighDefinition
             public int shadowMaskTextureIndex;
         }
 
+        ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+        void CreateGBufferTargets(RenderGraph renderGraph, HDCamera hdCamera, TextureHandle sssBuffer, TextureHandle vtFeedbackBuffer, ref PrepassOutput prepassOutput, FrameSettings frameSettings)
+        {
+            bool clearGBuffer = NeedClearGBuffer(hdCamera);
+            bool lightLayers = frameSettings.IsEnabled(FrameSettingsField.LightLayers);
+            bool shadowMasks = frameSettings.IsEnabled(FrameSettingsField.Shadowmask);
+
+            int currentIndex = 0;
+            prepassOutput.gbuffer.mrt[currentIndex] = sssBuffer;
+            currentIndex++;
+            prepassOutput.normalBuffer = CreateNormalBuffer(renderGraph, hdCamera, hdCamera.msaaSamples);
+            prepassOutput.gbuffer.mrt[currentIndex] = prepassOutput.normalBuffer;
+            currentIndex++;
+
+#if UNITY_2020_2_OR_NEWER
+            FastMemoryDesc gbufferFastMemDesc;
+            gbufferFastMemDesc.inFastMemory = true;
+            gbufferFastMemDesc.residencyFraction = 1.0f;
+            gbufferFastMemDesc.flags = FastMemoryFlags.SpillTop;
+#endif
+
+            // If we are in deferred mode and the SSR is enabled, we need to make sure that the second gbuffer is cleared given that we are using that information for clear coat selection
+            bool clearGBuffer2 = clearGBuffer || hdCamera.IsSSREnabled();
+            prepassOutput.gbuffer.mrt[currentIndex] = renderGraph.CreateTexture(
+                new TextureDesc(Vector2.one, true, true)
+                {
+                    colorFormat = GraphicsFormat.R8G8B8A8_UNorm,
+                    clearBuffer = clearGBuffer2,
+                    clearColor = Color.clear,
+                    name = "GBuffer2"
+#if UNITY_2020_2_OR_NEWER
+                    , fastMemoryDesc = gbufferFastMemDesc
+#endif
+                });
+            currentIndex++;
+
+            prepassOutput.gbuffer.mrt[currentIndex] = renderGraph.CreateTexture(
+                new TextureDesc(Vector2.one, true, true)
+                {
+                    colorFormat = Builtin.GetLightingBufferFormat(),
+                    clearBuffer = clearGBuffer,
+                    clearColor = Color.clear,
+                    name = "GBuffer3"
+#if UNITY_2020_2_OR_NEWER
+                    , fastMemoryDesc = gbufferFastMemDesc
+#endif
+                });
+            currentIndex++;
+
+            prepassOutput.gbuffer.lightLayersTextureIndex = -1;
+            prepassOutput.gbuffer.shadowMaskTextureIndex = -1;
+            if (lightLayers)
+            {
+                prepassOutput.gbuffer.mrt[currentIndex] = renderGraph.CreateTexture(
+                    new TextureDesc(Vector2.one, true, true) { colorFormat = GraphicsFormat.R8G8B8A8_UNorm, clearBuffer = clearGBuffer, clearColor = Color.clear, name = "LightLayers" });
+                prepassOutput.gbuffer.lightLayersTextureIndex = currentIndex++;
+            }
+            if (shadowMasks)
+            {
+                prepassOutput.gbuffer.mrt[currentIndex] = renderGraph.CreateTexture(
+                    new TextureDesc(Vector2.one, true, true) { colorFormat = Builtin.GetShadowMaskBufferFormat(), clearBuffer = clearGBuffer, clearColor = Color.clear, name = "ShadowMasks" });
+                prepassOutput.gbuffer.shadowMaskTextureIndex = currentIndex++;
+            }
+
+            prepassOutput.gbuffer.gBufferCount = currentIndex;
+        }
+
+
         void SetupGBufferTargets(RenderGraph renderGraph, HDCamera hdCamera, TextureHandle sssBuffer, TextureHandle vtFeedbackBuffer, ref PrepassOutput prepassOutput, FrameSettings frameSettings, RenderGraphBuilder builder)
         {
             bool clearGBuffer = NeedClearGBuffer(hdCamera);
@@ -590,28 +663,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
             // If we are in deferred mode and the SSR is enabled, we need to make sure that the second gbuffer is cleared given that we are using that information for clear coat selection
             bool clearGBuffer2 = clearGBuffer || hdCamera.IsSSREnabled();
-            prepassOutput.gbuffer.mrt[currentIndex] = builder.UseColorBuffer(renderGraph.CreateTexture(
-                new TextureDesc(Vector2.one, true, true)
-                {
-                    colorFormat = GraphicsFormat.R8G8B8A8_UNorm,
-                    clearBuffer = clearGBuffer2,
-                    clearColor = Color.clear,
-                    name = "GBuffer2"
-#if UNITY_2020_2_OR_NEWER
-                    , fastMemoryDesc = gbufferFastMemDesc
-#endif
-                }), currentIndex++);
-            prepassOutput.gbuffer.mrt[currentIndex] = builder.UseColorBuffer(renderGraph.CreateTexture(
-                new TextureDesc(Vector2.one, true, true)
-                {
-                    colorFormat = Builtin.GetLightingBufferFormat(),
-                    clearBuffer = clearGBuffer,
-                    clearColor = Color.clear,
-                    name = "GBuffer3"
-#if UNITY_2020_2_OR_NEWER
-                    , fastMemoryDesc = gbufferFastMemDesc
-#endif
-                }), currentIndex++);
+            prepassOutput.gbuffer.mrt[currentIndex] = builder.UseColorBuffer(prepassOutput.gbuffer.mrt[currentIndex], currentIndex++);
+            prepassOutput.gbuffer.mrt[currentIndex] = builder.UseColorBuffer(prepassOutput.gbuffer.mrt[currentIndex], currentIndex++);
 
 #if ENABLE_VIRTUALTEXTURES
             prepassOutput.gbuffer.mrt[currentIndex] = builder.UseColorBuffer(vtFeedbackBuffer, currentIndex++);
@@ -634,6 +687,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             prepassOutput.gbuffer.gBufferCount = currentIndex;
         }
+        ///@@@@ [Divergence - 0] - End
 
         // TODO RENDERGRAPH: For now we just bind globally for GBuffer/Forward passes.
         // We need to find a nice way to invalidate this kind of buffers when they should not be used anymore (after the last read).
