@@ -339,11 +339,13 @@ namespace UnityEngine.Rendering.HighDefinition
         /// <summary>Mark the HDCamera as persistant so it won't be destroyed if the camera is disabled</summary>
         internal bool isPersistent = false;
 
-        internal HDUtils.PackedMipChainInfo m_DepthBufferMipChainInfo = new HDUtils.PackedMipChainInfo();
+        //@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+        public HDUtils.PackedMipChainInfo m_DepthBufferMipChainInfo = new HDUtils.PackedMipChainInfo();
 
-        internal ref HDUtils.PackedMipChainInfo depthBufferMipChainInfo => ref m_DepthBufferMipChainInfo;
+        public ref HDUtils.PackedMipChainInfo depthBufferMipChainInfo => ref m_DepthBufferMipChainInfo;
 
-        internal Vector2Int depthMipChainSize => m_DepthBufferMipChainInfo.textureSize;
+        public Vector2Int depthMipChainSize => m_DepthBufferMipChainInfo.textureSize;
+        ///@@@@ [Divergence - 1] - End
 
         // VisualSky is the sky used for rendering in the main view.
         // LightingSky is the sky used for lighting the scene (ambient probe and sky reflection)

@@ -149,6 +149,9 @@ namespace UnityEngine.Rendering.HighDefinition
             ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
             public HDRenderPipeline.GBufferOutput gbuffer;
             ///@@@@ [Divergence - 0] - End
+            ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+            public TextureHandle depthPyramidTexture;
+            ///@@@@ [Divergence - 1] - End
         }
 
         enum Version
@@ -220,6 +223,12 @@ namespace UnityEngine.Rendering.HighDefinition
                     output.gbuffer.mrt[i] = builder.ReadWriteTexture(targets.gbuffer.mrt[i]);
             }
             ///@@@@ [Divergence - 0] - End
+
+            ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+            if (targets.depthPyramidTexture.IsValid())
+                output.depthPyramidTexture = builder.ReadTexture(targets.depthPyramidTexture);
+            ///@@@@ [Divergence - 1] - End
+
             return output;
         }
 
@@ -282,6 +291,9 @@ namespace UnityEngine.Rendering.HighDefinition
                             ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
                             customPass.currentRenderTarget.gbuffer,
                             ///@@@@ [Divergence - 0] - End
+                            ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+                            customPass.currentRenderTarget.depthPyramidTexture
+                            ///@@@@ [Divergence - 1] - End
                         );
 
                         customPass.isExecuting = true;

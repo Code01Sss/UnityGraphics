@@ -590,7 +590,9 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        internal struct PackedMipChainInfo
+        //@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+        public struct PackedMipChainInfo
+        //@@@@ [Divergence - 1] - End
         {
             public Vector2Int textureSize;
             public int mipLevelCount;

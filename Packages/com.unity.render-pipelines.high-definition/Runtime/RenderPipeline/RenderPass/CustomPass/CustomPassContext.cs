@@ -1,4 +1,7 @@
 using System;
+///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+using UnityEngine.Experimental.Rendering.RenderGraphModule;
+///@@@@ [Divergence - 1] - End
 
 namespace UnityEngine.Rendering.HighDefinition
 {
@@ -70,6 +73,10 @@ namespace UnityEngine.Rendering.HighDefinition
         public HDRenderPipeline.GBufferOutput gbuffer;
         ///@@@@ [Divergence - 0] - End
 
+        ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+        public TextureHandle depthpyramid;
+        ///@@@@ [Divergence - 1] - End
+
         internal CustomPassContext(
             ScriptableRenderContext renderContext, CommandBuffer cmd,
             HDCamera hdCamera, CullingResults cullingResults,
@@ -82,6 +89,9 @@ namespace UnityEngine.Rendering.HighDefinition
             MaterialPropertyBlock propertyBlock,
             HDRenderPipeline.GBufferOutput gbuffer,
             ///@@@@ [Divergence - 0] - End
+            ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+            TextureHandle depthpyramid)
+            ///@@@@ [Divergence - 1] - End
         {
             this.renderContext = renderContext;
             this.cmd = cmd;
@@ -98,6 +108,9 @@ namespace UnityEngine.Rendering.HighDefinition
             ///@@@@ [Divergence - 0] - Expose GBuffers to custom passes
             this.gbuffer = gbuffer;
             ///@@@@ [Divergence - 0] - End
+            ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
+            this.depthpyramid = depthpyramid;
+            ///@@@@ [Divergence - 1] - End
         }
     }
 }
