@@ -79,6 +79,10 @@ namespace UnityEngine.Rendering.HighDefinition
 
             public TextureHandle stencilBuffer;
             public ComputeBufferHandle coarseStencilBuffer;
+
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            public TextureHandle afterDepthPrepassDepthPyramid;
+            ///@@@@ [Divergence - 3] - End
         }
 
         TextureHandle CreateDepthBuffer(RenderGraph renderGraph, bool clear, MSAASamples msaaSamples)
@@ -200,6 +204,13 @@ namespace UnityEngine.Rendering.HighDefinition
             CreateGBufferTargets(renderGraph, hdCamera, sssBuffer, vtFeedbackBuffer, ref result, hdCamera.frameSettings);
             ///@@@@ [Divergence - 0] - End
 
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            ///Create the depth pyramid texture
+            var depthMipchainSize = hdCamera.depthMipChainSize;
+            result.afterDepthPrepassDepthPyramid = renderGraph.CreateTexture(
+                new TextureDesc(depthMipchainSize.x, depthMipchainSize.y, true, true) 
+                { colorFormat = GraphicsFormat.R32_SFloat, enableRandomWrite = true, name = "AfterDepthPrepassDepthPypramid" });
+            ///@@@@ [Divergence - 3] - End
             RenderXROcclusionMeshes(renderGraph, hdCamera, colorBuffer, result.depthBuffer);
 
             using (new XRSinglePassScope(renderGraph, hdCamera))
@@ -212,6 +223,10 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 bool shouldRenderMotionVectorAfterGBuffer = RenderDepthPrepass(renderGraph, cullingResults, hdCamera, ref result, out var decalBuffer);
 
+                ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+                GenerateDepthPrepassDepthPyramid(renderGraph, hdCamera, false, ref result);
+                ///@@@@ [Divergence - 3] - End
+                
                 ResetCameraMipBias(hdCamera);
 
                 if (!shouldRenderMotionVectorAfterGBuffer)
@@ -1260,6 +1275,52 @@ namespace UnityEngine.Rendering.HighDefinition
             // Re-enable this when/if depth texture becomes an actual texture with mip again.
             //PushFullScreenDebugTextureMip(renderGraph, output.depthPyramidTexture, GetDepthBufferMipChainInfo().mipLevelCount, renderGraph.rtHandleProperties.rtHandleScale, FullScreenDebugMode.DepthPyramid);
         }
+
+
+        ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+        void GenerateDepthPrepassDepthPyramid(RenderGraph renderGraph, HDCamera hdCamera, bool mip0AlreadyComputed, ref PrepassOutput output)
+        {
+            using (var builder = renderGraph.AddRenderPass<CopyDepthPassData>("Copy after depth prepass depth pyramid mip 0", out var passData, ProfilingSampler.Get(HDProfileId.CopyDepthBuffer)))
+            {
+                var depthMipchainSize = hdCamera.depthMipChainSize;
+                passData.inputDepth = builder.ReadTexture(output.depthBuffer);
+
+                passData.outputDepth = builder.WriteTexture(output.afterDepthPrepassDepthPyramid);
+
+                passData.GPUCopy = m_GPUCopy;
+                passData.width = hdCamera.actualWidth;
+                passData.height = hdCamera.actualHeight;
+
+                builder.SetRenderFunc(
+                    (CopyDepthPassData data, RenderGraphContext context) =>
+                    {
+                            // TODO: maybe we don't actually need the top MIP level?
+                            // That way we could avoid making the copy, and build the MIP hierarchy directly.
+                            // The downside is that our SSR tracing accuracy would decrease a little bit.
+                            // But since we never render SSR at full resolution, this may be acceptable.
+
+                            // TODO: reading the depth buffer with a compute shader will cause it to decompress in place.
+                            // On console, to preserve the depth test performance, we must NOT decompress the 'm_CameraDepthStencilBuffer' in place.
+                            // We should call decompressDepthSurfaceToCopy() and decompress it to 'm_CameraDepthBufferMipChain'.
+                        data.GPUCopy.SampleCopyChannel_xyzw2x(context.cmd, data.inputDepth, data.outputDepth, new RectInt(0, 0, data.width, data.height));
+                    });
+            }
+
+            using (var builder = renderGraph.AddRenderPass<GenerateDepthPyramidPassData>("Generate Depth Pyramid After Depth Prepass", out var passData, ProfilingSampler.Get(HDProfileId.DepthPyramid)))
+            {
+                passData.depthTexture = builder.WriteTexture(output.afterDepthPrepassDepthPyramid);
+                passData.mipInfo = hdCamera.depthBufferMipChainInfo;
+                passData.mipGenerator = m_MipGenerator;
+                passData.mip0AlreadyComputed = false;
+
+                builder.SetRenderFunc(
+                    (GenerateDepthPyramidPassData data, RenderGraphContext context) =>
+                    {
+                        data.mipGenerator.RenderMinDepthPyramid(context.cmd, data.depthTexture, data.mipInfo, data.mip0AlreadyComputed);
+                    });                
+            }
+        }
+        ///@@@@ [Divergence - 3] - End
 
         class CameraMotionVectorsPassData
         {

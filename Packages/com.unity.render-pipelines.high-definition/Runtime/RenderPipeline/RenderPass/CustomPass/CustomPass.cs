@@ -152,6 +152,9 @@ namespace UnityEngine.Rendering.HighDefinition
             ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
             public TextureHandle depthPyramidTexture;
             ///@@@@ [Divergence - 1] - End
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            public TextureHandle afterDepthPrepassDepthPyramid;
+            ///@@@@ [Divergence - 3] - End
         }
 
         enum Version
@@ -228,7 +231,11 @@ namespace UnityEngine.Rendering.HighDefinition
             if (targets.depthPyramidTexture.IsValid())
                 output.depthPyramidTexture = builder.ReadTexture(targets.depthPyramidTexture);
             ///@@@@ [Divergence - 1] - End
-
+            
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            if(targets.afterDepthPrepassDepthPyramid.IsValid())
+                output.afterDepthPrepassDepthPyramid = builder.ReadTexture(targets.afterDepthPrepassDepthPyramid);
+            ///@@@@ [Divergence - 3] - End
             return output;
         }
 
@@ -292,8 +299,11 @@ namespace UnityEngine.Rendering.HighDefinition
                             customPass.currentRenderTarget.gbuffer,
                             ///@@@@ [Divergence - 0] - End
                             ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
-                            customPass.currentRenderTarget.depthPyramidTexture
+                            customPass.currentRenderTarget.depthPyramidTexture,
                             ///@@@@ [Divergence - 1] - End
+                            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+                            customPass.currentRenderTarget.afterDepthPrepassDepthPyramid
+                            ///@@@@ [Divergence - 3] - End
                         );
 
                         customPass.isExecuting = true;

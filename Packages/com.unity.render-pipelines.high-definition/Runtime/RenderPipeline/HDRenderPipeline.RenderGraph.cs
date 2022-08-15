@@ -1815,9 +1815,12 @@ namespace UnityEngine.Rendering.HighDefinition
                     gbuffer = prepassOutput.gbuffer,
                     ///@@@@ [Divergence - 0] - End
                     ///@@@@ [Divergence - 1]: Support to read depth pyramid texture in a custom pass
-                    depthPyramidTexture = prepassOutput.depthPyramidTexture
+                    depthPyramidTexture = prepassOutput.depthPyramidTexture,
                     ///@@@@ [Divergence - 1] - End
-                };
+                    ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+                    afterDepthPrepassDepthPyramid = prepassOutput.afterDepthPrepassDepthPyramid
+                    ///@@@@ [Divergence - 3] - End
+            };
                 executed |= customPass.Execute(renderGraph, hdCamera, cullingResults, cameraCullingResults, customPassTargets);
             }
 

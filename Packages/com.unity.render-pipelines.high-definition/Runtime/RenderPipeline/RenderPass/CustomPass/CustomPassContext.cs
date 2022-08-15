@@ -77,6 +77,10 @@ namespace UnityEngine.Rendering.HighDefinition
         public TextureHandle depthpyramid;
         ///@@@@ [Divergence - 1] - End
 
+        ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+        public TextureHandle afterDepthPrepassDepthPyramid;
+        ///@@@@ [Divergence - 3] - End
+
         internal CustomPassContext(
             ScriptableRenderContext renderContext, CommandBuffer cmd,
             HDCamera hdCamera, CullingResults cullingResults,
@@ -90,8 +94,11 @@ namespace UnityEngine.Rendering.HighDefinition
             HDRenderPipeline.GBufferOutput gbuffer,
             ///@@@@ [Divergence - 0] - End
             ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
-            TextureHandle depthpyramid)
+            TextureHandle depthpyramid,
             ///@@@@ [Divergence - 1] - End
+             ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            TextureHandle afterDepthPrepassDepthPyramid)
+            ///@@@@ [Divergence - 3] - End
         {
             this.renderContext = renderContext;
             this.cmd = cmd;
@@ -111,6 +118,9 @@ namespace UnityEngine.Rendering.HighDefinition
             ///@@@@ [Divergence - 1] - Expose post-GBuffer depth pyramid to custom passes
             this.depthpyramid = depthpyramid;
             ///@@@@ [Divergence - 1] - End
-        }
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            this.afterDepthPrepassDepthPyramid = afterDepthPrepassDepthPyramid;
+            ///@@@@ [Divergence - 3] - End
     }
+}
 }
