@@ -241,6 +241,8 @@ namespace UnityEngine.Rendering.HighDefinition
                 RenderDBuffer(renderGraph, hdCamera, decalBuffer, ref result, cullingResults);
 
                 ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+                ///Note: If you want to correctly write to the GBuffers you might need to set UnityPerDraw Cbuffer.
+                ///See KFR_ProbeUtility for an example of SH coefficients.
                 RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.BeforeGBuffer, aovRequest, aovBuffers);
                 ///@@@@ [Divergence - 2] - End
                 
@@ -249,6 +251,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
 
                 ///@@@@ [Divergence - 2] - Custom injection points (Before, After, AfterDepthPyramid, etc).
+                ///Note: If you want to correctly write to the GBuffers you might need to set UnityPerDraw Cbuffer.
+                ///See KFR_ProbeUtility for an example of SH coefficients.
                 RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.AfterGBuffer, aovRequest, aovBuffers);
                 ///@@@@ [Divergence - 2] - End
 
