@@ -585,7 +585,9 @@ namespace UnityEngine.Rendering.HighDefinition
             public DBufferOutput dBuffer;
         }
 
-        struct GBufferOutput
+        //@@@@ [Divergence - 0] - Expose GBuffers to custom passes
+        public struct GBufferOutput
+        //@@@@ [Divergence - 0] - End
         {
             public TextureHandle[] mrt;
             public int gBufferCount;
