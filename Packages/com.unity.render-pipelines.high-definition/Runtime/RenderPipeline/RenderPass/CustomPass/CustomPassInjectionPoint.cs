@@ -33,7 +33,10 @@ namespace UnityEngine.Rendering.HighDefinition
         AfterGBuffer = 11,
         /// <summary>This injection point is after HDRP depth pyramid.</summary>
         /// Depth Pyramid is now twice, after depth pre pass and after Gbuffer
-        AfterDepthPyramid = 12
+        AfterDepthPyramid = 12,
         ///@@@@ [Divergence - 3] - End
+        ///@@@@ [Divergence - 4] - Injection point after custom depth pyramid creation
+        AfterCustomDepthPassPyramid = 13
+        ///@@@@ [Divergence - 4] - End
     }
 }

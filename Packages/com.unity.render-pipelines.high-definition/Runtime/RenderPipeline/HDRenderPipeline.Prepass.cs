@@ -226,7 +226,11 @@ namespace UnityEngine.Rendering.HighDefinition
                 ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
                 GenerateDepthPrepassDepthPyramid(renderGraph, hdCamera, false, ref result);
                 ///@@@@ [Divergence - 3] - End
-                
+
+                ///@@@@ [Divergence - 4] - Injection point after custom depth pyramid creation
+                RenderCustomPass(renderGraph, hdCamera, colorBuffer, result, customPassCullingResults, cullingResults, CustomPassInjectionPoint.AfterCustomDepthPassPyramid, aovRequest, aovBuffers);
+                ///@@@@ [Divergence - 4] - End
+
                 ResetCameraMipBias(hdCamera);
 
                 if (!shouldRenderMotionVectorAfterGBuffer)
