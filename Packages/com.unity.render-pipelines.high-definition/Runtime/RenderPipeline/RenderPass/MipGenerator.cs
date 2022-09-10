@@ -6,6 +6,9 @@ namespace UnityEngine.Rendering.HighDefinition
         RTHandle[] m_TempDownsamplePyramid;
 
         ComputeShader m_DepthPyramidCS;
+        ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+        ComputeShader m_kfrCustomDepthPyramidCS;
+        ///@@@@ [Divergence - 3] - End
         Shader m_ColorPyramidPS;
         Material m_ColorPyramidPSMat;
         MaterialPropertyBlock m_PropertyBlock;
@@ -20,6 +23,9 @@ namespace UnityEngine.Rendering.HighDefinition
             m_TempColorTargets = new RTHandle[tmpTargetCount];
             m_TempDownsamplePyramid = new RTHandle[tmpTargetCount];
             m_DepthPyramidCS = defaultResources.shaders.depthPyramidCS;
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            m_kfrCustomDepthPyramidCS = defaultResources.shaders.kfrCustomDepthPyramidCS;
+            ///@@@@ [Divergence - 3] - End
 
             m_DepthDownsampleKernel = m_DepthPyramidCS.FindKernel("KDepthDownsample8DualUav");
 
@@ -251,5 +257,46 @@ namespace UnityEngine.Rendering.HighDefinition
 
             return srcMipLevel + 1;
         }
+
+        ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+        public void RenderInversedMinDepthPyramid(CommandBuffer cmd, RenderTexture texture, HDUtils.PackedMipChainInfo info, bool mip1AlreadyComputed)
+        {
+            HDUtils.CheckRTCreated(texture);
+
+            var cs = m_kfrCustomDepthPyramidCS;
+            int kernel = m_DepthDownsampleKernel;
+
+            // TODO: Do it 1x MIP at a time for now. In the future, do 4x MIPs per pass, or even use a single pass.
+            // Note: Gather() doesn't take a LOD parameter and we cannot bind an SRV of a MIP level,
+            // and we don't support Min samplers either. So we are forced to perform 4x loads.
+            for (int i = 1; i < info.mipLevelCount; i++)
+            {
+                if (mip1AlreadyComputed && i == 1) continue;
+
+                Vector2Int dstSize = info.mipLevelSizes[i];
+                Vector2Int dstOffset = info.mipLevelOffsets[i];
+                Vector2Int srcSize = info.mipLevelSizes[i - 1];
+                Vector2Int srcOffset = info.mipLevelOffsets[i - 1];
+                Vector2Int srcLimit = srcOffset + srcSize - Vector2Int.one;
+
+                m_SrcOffset[0] = srcOffset.x;
+                m_SrcOffset[1] = srcOffset.y;
+                m_SrcOffset[2] = srcLimit.x;
+                m_SrcOffset[3] = srcLimit.y;
+
+                m_DstOffset[0] = dstOffset.x;
+                m_DstOffset[1] = dstOffset.y;
+                m_DstOffset[2] = 0;
+                m_DstOffset[3] = 0;
+
+                cmd.SetComputeIntParams(cs, HDShaderIDs._SrcOffsetAndLimit, m_SrcOffset);
+                cmd.SetComputeIntParams(cs, HDShaderIDs._DstOffset, m_DstOffset);
+                cmd.SetComputeTextureParam(cs, kernel, HDShaderIDs._DepthMipChain, texture);
+
+                cmd.DispatchCompute(cs, kernel, HDUtils.DivRoundUp(dstSize.x, 8), HDUtils.DivRoundUp(dstSize.y, 8), texture.volumeDepth);
+            }
+        }
+        ///@@@@ [Divergence - 3] - End
+
     }
 }

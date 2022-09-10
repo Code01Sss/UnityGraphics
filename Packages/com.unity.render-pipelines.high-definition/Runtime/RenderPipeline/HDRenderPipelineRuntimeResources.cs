@@ -49,6 +49,10 @@ namespace UnityEngine.Rendering.HighDefinition
             public Shader colorPyramidPS;
             [Reload("Runtime/RenderPipeline/RenderPass/DepthPyramid.compute")]
             public ComputeShader depthPyramidCS;
+            ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
+            [Reload("Runtime/RenderPipeline/RenderPass/KFR_CustomDepthPyramid.compute")]
+            public ComputeShader kfrCustomDepthPyramidCS;
+            ///@@@@ [Divergence - 3] - End
             [Reload("Runtime/RenderPipeline/RenderPass/GenerateMaxZ.compute")]
             public ComputeShader maxZCS;
 

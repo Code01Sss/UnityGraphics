@@ -1284,7 +1284,7 @@ namespace UnityEngine.Rendering.HighDefinition
         ///@@@@ [Divergence - 3] - Create a Depth Pyramid after DepthPrepass
         void GenerateDepthPrepassDepthPyramid(RenderGraph renderGraph, HDCamera hdCamera, bool mip0AlreadyComputed, ref PrepassOutput output)
         {
-            using (var builder = renderGraph.AddRenderPass<CopyDepthPassData>("Copy after depth prepass depth pyramid mip 0", out var passData, ProfilingSampler.Get(HDProfileId.CopyDepthBuffer)))
+            using (var builder = renderGraph.AddRenderPass<CopyDepthPassData>("Copy after depth prepass depth pyramid mip 0", out var passData, new ProfilingSampler("KFR Copy Depth")))
             {
                 var depthMipchainSize = hdCamera.depthMipChainSize;
                 passData.inputDepth = builder.ReadTexture(output.depthBuffer);
@@ -1310,7 +1310,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     });
             }
 
-            using (var builder = renderGraph.AddRenderPass<GenerateDepthPyramidPassData>("Generate Depth Pyramid After Depth Prepass", out var passData, ProfilingSampler.Get(HDProfileId.DepthPyramid)))
+            using (var builder = renderGraph.AddRenderPass<GenerateDepthPyramidPassData>("KFR Custom Depth Pyramid", out var passData, new ProfilingSampler("KFR Depth Pyramid")))
             {
                 passData.depthTexture = builder.WriteTexture(output.afterDepthPrepassDepthPyramid);
                 passData.mipInfo = hdCamera.depthBufferMipChainInfo;
@@ -1320,7 +1320,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 builder.SetRenderFunc(
                     (GenerateDepthPyramidPassData data, RenderGraphContext context) =>
                     {
-                        data.mipGenerator.RenderMinDepthPyramid(context.cmd, data.depthTexture, data.mipInfo, data.mip0AlreadyComputed);
+                        data.mipGenerator.RenderInversedMinDepthPyramid(context.cmd, data.depthTexture, data.mipInfo, data.mip0AlreadyComputed);
                     });                
             }
         }
